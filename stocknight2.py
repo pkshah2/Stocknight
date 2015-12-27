@@ -11,56 +11,36 @@ class Portfolio:
 	@staticmethod
 	def addToPortfolio(toAdd):
 		Portfolio.stockDictionary[toAdd.name] = toAdd
-		print Portfolio.stockDictionary
 		pickle.dump(Portfolio.stockDictionary, open("save.p", "wb"))
-		
 
-class Stock:
+class Stock: #rename to stockHoldings
 	"""Common base class for all stocks"""
-	trackCount = 0
-	def __init__(self, name, price, numofStocks):
+	def __init__(self, name, invested_price, numofShares):
 		self.name = name
 		if Share(self.name).get_price() is None:
-			self.valid = 0
-			print "That does not seem to be a valid stock"
-		else:
-			print "Now adding "+ self.name
-			Stock.trackCount= Stock.trackCount + 1
-			self.valid = 1
-			self.invested_price = price
-			self.amount = numofStocks
-			if self.invested_price == -1:
-				self.watchOnly = True
-			else:
-				self.watchOnly = False
-			Portfolio.addToPortfolio(self) 
-	
-	def currentPrice(self):
-		self.rate = Share(self.name).get_price()
-		print self.rate
+			raise ValueError()
 
+		self.invested_price = invested_price
+		self.numOfShares = numofShares
+		if self.invested_price == -1:
+			self.watchOnly = True
+		else:
+			self.watchOnly = False
+		Portfolio.addToPortfolio(self) 
+	
 	def basicInfoPrint(self):
 		print self.currentPrice()
 
 class Currencies:
 	"""Common base class for all currencies"""
-	trackCount = 0
 	def __init__(self,name):
 		self.name = name
 		if Currency(self.name).get_rate() is None: 
-			self.valid = 0
-		else:
-			Currencies.trackCount=Currencies.trackCount+1
-			self.valid = 1
-			self.bid = Currency(self.name).get_bid()
-			self.ask = Currency(self.name).get_ask()
-			self.rate = Currency(self.name).get_rate()
-			self.datetime = Currency(self.name).get_trade_datetime()
-			Portfolio.addToPortfolio(self)
-
-	def update(self):
-		if self.valid == 1:
-			self.rate = Currency(self.name).get_rate()
+			raise ValueError(name + " is not a valid currency.")
+		self.bid = Currency(self.name).get_bid()
+		self.ask = Currency(self.name).get_ask()
+		self.rate = Currency(self.name).get_rate()
+		self.datetime = Currency(self.name).get_trade_datetime()
 
 
 	def basicInfoPrint(self):
@@ -69,10 +49,9 @@ class Currencies:
 
  
 def addANewStock():
-	print "What stock do you want to add?"
-	stockToAdd = raw_input()
-	t = True
-	while t:
+	while True:
+		print "What stock do you want to add?"
+		stockToAdd = raw_input()
 		print "Have you already invested in this stock? [Yes/No]"
 		optionYouChose = raw_input().lower()
 		if optionYouChose == "yes":
@@ -80,19 +59,26 @@ def addANewStock():
 			priceToSend = raw_input()
 			print "How many stocks did you buy at this price point"
 			amountYouBought = raw_input()
-			Stock(stockToAdd, priceToSend, amountYouBought)
-			print "Your stock "+ stockToAdd +" has been added!"
+			try: 
+				s = Stock(stockToAdd, priceToSend, amountYouBought)
+				Portfolio.addToPortfolio(s)
+			except ValueError as e:
+				print "Error adding stock "
 			print "Do you want to add anything else?"
 			loopcontinue = raw_input()
 			if loopcontinue.lower() == "no":
-				t = False
+				break
 		elif optionYouChose == "no":
-			Stock(stockToAdd, -1, -1)
+			try: 
+				s = Stock(stockToAdd, -1, -1)
+				Portfolio.addToPortfolio(s)
+			except ValueError as e:
+				print "Error adding stock "
 			print "Your stock " + stockToAdd +" has been added!"
 			print "Do you want to add anything else? [Yes/No]"
 			loopcontinue = raw_input()
 			if loopcontinue.lower() == "no":
-				t = False
+				break
 		else: 
 			print "You have entered input that is not valid at this point."
 	return 
@@ -101,7 +87,11 @@ def addANewStock():
 def addANewCurrency():
 	print "What currency do you want to trade for what currency?"
 	currencyToProcess = raw_input()
-	Currencies(currencyToProcess)
+	try: 
+		s = Currencies(currencyToProcess)
+		Portfolio.addToPortfolio(s)
+	except ValueError as e:
+		print "Error adding stock "
 	print currencyToProcess+ " has been added to your portfolio"
 	return 
 
@@ -117,15 +107,11 @@ def searchMyPortfolio():
 		if userCommand == "no" or "n":
 			return
 		else:
-			addANewStock()
+			addANewStock() 
 
-def viewStockPerformanceData():
+def viewPerformanceData():
 	for key in stockDictionary:
 			print 'Stock name: ', key, ' Price: ', Portfolio.stockDictionary[key].basicInfoPrint()
-
-def viewCurrencyPerformanceData():
-	for key in currencyDictionary:
-		print 'Currency from: ', key[:3], 'to ', key[-3:], 'is at ', Portfolio.stockDictionary[key].basicInfoPrint()
 
 def predictionAlgorithm():
 	print "This is the prediction algorithm."
@@ -141,15 +127,15 @@ def predictionAlgorithm():
 			print "Your investment seems to be safe. It hasn't really had a major increase or decrease."
 		time.sleep(5)  		
 
-loopCont = True
+
+print "Welcome to Stocknight!"
 try:
 	Portfolio.stockDictionary = pickle.load(open("save.p", "rb"))
 except IOError:
 	pickle.dump(Portfolio.stockDictionary, open("save.p", "wb"))
 	Portfolio.stockDictionary = pickle.load(open("save.p", "rb"))
 
-print "Welcome to Stocknight!"
-while loopCont: 
+while True: 
 	print "If you want to add a new stock to your portfolio, type New Stock"
 	print "If you want to add a new currency to your portfolio, type New Currency"
 	print "If you want to search your porfolio, type Search"
@@ -171,6 +157,5 @@ while loopCont:
 	elif userCommand == "prediction algorithm":
 		predictionAlgorithm()
 	elif userCommand == "exit":
-		loopCont = False
-
+		break
 
