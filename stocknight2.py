@@ -26,8 +26,7 @@ class Stock: #rename to stockHoldings
 			self.watchOnly = True
 		else:
 			self.watchOnly = False
-		Portfolio.addToPortfolio(self) 
-	
+				
 	def basicInfoPrint(self):
 		print self.currentPrice()
 
